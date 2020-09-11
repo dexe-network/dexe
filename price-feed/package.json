@@ -1,0 +1,43 @@
+{
+  "name": "dexe-price-feed",
+  "version": "1.0.0",
+  "description": "Uniswap price feed for Dexe",
+  "main": "index.js",
+  "scripts": {
+    "compile": "truffle compile",
+    "test": "truffle test",
+    "ganache": "ganache-cli --gasLimit 100000000",
+    "validate": "solhint contracts/*.sol contracts/*/*.sol",
+    "validate-js": "eslint test/*.js test/helpers/*.js --fix",
+    "validate-sol": "solhint contracts/*.sol contracts/*/*.sol --fix"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lastperson/dexe.git"
+  },
+  "keywords": [
+    "ethereum",
+    "uniswap",
+    "token",
+    "sale"
+  ],
+  "author": "Armen Arakelian",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lastperson/dexe/issues"
+  },
+  "homepage": "https://github.com/lastperson/dexe#readme",
+  "dependencies": {
+    "@uniswap/v2-periphery": "^1.1.0-beta.0"
+  },
+  "devDependencies": {
+    "bluebird": "^3.7.2",
+    "deep-object-diff": "^1.1.0",
+    "eslint": "7.7.0",
+    "eslint-config-google": "0.14.0",
+    "ganache-cli": "6.10.1",
+    "solhint": "3.2.0",
+    "truffle": "5.1.41",
+    "truffle-assertions": "0.9.2"
+  }
+}

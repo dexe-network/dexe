@@ -1,0 +1,19 @@
+{
+  "extends": "solhint:default",
+  "rules": {
+    "quotes": ["error", "single"],
+    "max-line-length": ["error", 120],
+    "avoid-call-value": "off",
+    "no-complex-fallback": "off",
+    "multiple-sends": "off",
+    "no-inline-assembly": "off",
+    "avoid-low-level-calls": "off",
+    "func-param-name-mixedcase": "off",
+    "func-name-mixedcase": "off",
+    "func-order": "off",
+    "payable-fallback": "off",
+    "function-max-lines": "off",
+    "code-complexity": "off",
+    "max-states-count": "off"
+  }
+}

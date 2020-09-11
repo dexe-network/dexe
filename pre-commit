@@ -1,0 +1,3 @@
+#!/bin/sh
+
+cd dexe-main && npm run validate && cd .. && cd price-feed && npm run validate
