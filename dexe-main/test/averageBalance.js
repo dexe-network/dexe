@@ -50,6 +50,7 @@ contract('Average Balance', function(accounts) {
     await dexe.setUSDCTokenAddress(tokenUSDCMock.address);
     await dexe.setUSDTTokenAddress(tokenUSDTMock.address);
 
+    await dexe.addToWhitelist(OWNER, USDC_LIMIT_WHITELIST);
     await dexe.addToWhitelist(userOne, USDC_LIMIT_WHITELIST);
     await dexe.addToWhitelist(userTwo, USDC_LIMIT_WHITELIST);
 
@@ -1498,6 +1499,29 @@ contract('Average Balance', function(accounts) {
       await ganache.setTime(launchTime + 1000 + MONTH * 2);
 
       assertBNequal(await dexe.getAverageBalance(userOne), bn(3000000));
+    });
+
+    it('should calculate average balance < sale end > first transfer < launch last transfer > < 30 days > < 60 days >', async () => {
+      const userOneTransferBalance1 = bn(1000000);
+      const userOneTransferBalance2 = bn(2000000);
+
+      await ganache.setTime(saleEndTime + DAY_IN_SEC);
+      await prepareDistributions(dexe, 1);
+
+      await ganache.setTime(saleEndTime + DAY_IN_SEC + 1);
+      await dexe.transfer(userOne, userOneTransferBalance1, {
+        from: OWNER,
+      });
+      const launchTime = saleEndTime + 2 * DAY_IN_SEC;
+      await ganache.setTime(launchTime);
+      await dexe.launchProduct();
+
+      await dexe.transfer(userOne, userOneTransferBalance2, {
+        from: OWNER,
+      });
+      await ganache.setTime(launchTime + DAY_IN_SEC);
+
+      assertBNequal(await dexe.getAverageBalance(userOne), bn(1000000));
     });
 
     it('should calculate average balance first transfer < launch > < 30 days > last transfer < 60 days >', async () => {

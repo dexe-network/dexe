@@ -16,4 +16,9 @@ contract TokenMock {
         require(success);
         return true;
     }
+
+    function transfer(address, uint256) public view returns (bool) {
+        require(success);
+        return true;
+    }
 }

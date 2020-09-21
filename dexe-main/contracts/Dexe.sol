@@ -47,7 +47,6 @@ contract Dexe is Ownable, ERC20Burnable, IDexe {
     uint private constant DEXE = 10**18;
     uint private constant USDC = 10**6;
     uint private constant USDT = 10**6;
-    uint private constant DISTRIBUTOR_LIMIT = 10**10 * USDC;
     uint private constant MONTH = 30 days;
     uint public constant ROUND_SIZE_BASE = 190_476;
     uint public constant ROUND_SIZE = ROUND_SIZE_BASE * DEXE;
@@ -62,8 +61,6 @@ contract Dexe is Ownable, ERC20Burnable, IDexe {
 
     // Deposits are immediately transferred here.
     address payable public treasury;
-
-    IPriceFeed public priceFeed;
 
     enum LockType {
         Staking,
@@ -113,8 +110,8 @@ contract Dexe is Ownable, ERC20Burnable, IDexe {
 
     mapping(uint => Round) public rounds; // Indexes are 1-22.
 
-    // Sunday, September 20, 2020 12:00:00 PM GMT
-    uint public constant tokensaleStartDate = 1600603200;
+    // Sunday, September 28, 2020 12:00:00 PM GMT
+    uint public constant tokensaleStartDate = 1601294400;
     uint public override constant tokensaleEndDate = tokensaleStartDate + ROUND_DURATION_SEC * TOTAL_ROUNDS;
 
     event NoteDeposit(address sender, uint value, bytes data);
@@ -132,8 +129,6 @@ contract Dexe is Ownable, ERC20Burnable, IDexe {
 
     constructor(address _distributor) ERC20('Dexe', 'DEXE') {
         _mint(address(this), 99_000_000 * DEXE);
-
-        _usersInfo[_distributor].firstRoundLimit = DISTRIBUTOR_LIMIT.toUInt120();
 
         // Market Liquidity Fund.
         _mint(_distributor, 1_000_000 * DEXE);
@@ -449,6 +444,12 @@ contract Dexe is Ownable, ERC20Burnable, IDexe {
         }
     }
 
+    // In case someone will send USDC/USDT/SomeToken directly.
+    function withdrawLocked(IERC20 _token, address _receiver, uint _amount) external onlyOwner() note() {
+        require(address(_token) != address(this), 'Cannot withdraw this');
+        _token.transfer(_receiver, _amount);
+    }
+
     function currentRound() public view returns(uint) {
         require(_passed(tokensaleStartDate), 'Tokensale not started yet');
         if (_passed(tokensaleEndDate)) {
@@ -692,7 +693,7 @@ contract Dexe is Ownable, ERC20Burnable, IDexe {
 
         // Calculating the end of the last average period.
         uint _timeEndpoint = _since(_launchDate).div(MONTH).mul(MONTH).add(_launchDate);
-        if (_lastBalanceChange > _timeEndpoint) {
+        if (_lastBalanceChange >= _timeEndpoint) {
             // Last update happened in the current average period.
             _user.balanceAccumulator = _accumulatorTillNow;
         } else {

@@ -62,4 +62,8 @@ contract('Owner functions', function(accounts) {
     await truffleAssert.reverts(dexe.launchProduct({from: user1}),
       'Ownable: caller is not the owner.');
   });
+  it('should not allow to withdraw locked by not owner', async () => {
+    await truffleAssert.reverts(dexe.withdrawLocked(user2, user1, 100, {from: user1}),
+      'Ownable: caller is not the owner.');
+  });
 });

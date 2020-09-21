@@ -1044,6 +1044,7 @@ contract('Tokensale', function(accounts) {
     await dexe.setDEXEFeed(usdcToDexeMock.address);
     await dexe.setUSDCTokenAddress(tokenUSDCMock.address);
     await dexe.addToWhitelist(user3, USDC_LIMIT_WHITELIST);
+    await dexe.addToWhitelist(owner, USDC_LIMIT_WHITELIST);
     await usdcToDexeMock.setPrice(USDC);
     await ganache.setTime(BEFORE_SALE);
     await doTransfer(OWNER, userOne, balance1);

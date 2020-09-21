@@ -1,4 +1,5 @@
 const Ganache = require('./helpers/ganache');
+const truffleAssert = require('truffle-assertions');
 const {saleStartTime} = require('./saleConfig');
 const {bn, tokenAsserts, assertBNequal} = require('./helpers/utils');
 
@@ -135,5 +136,21 @@ contract('Deposits', function(accounts) {
     assertBNequal((await dexe.holderRounds(1, user1)).deposited, depositAmountUSDC1);
     assertBNequal((await dexe.holderRounds(1, user2)).deposited, user2USDCDiposited);
     assertBNequal((await dexe.holderRounds(1, user3)).deposited, user3USDCDiposited);
+  });
+  it('should not allow to withdraw locked DEXE', async () => {
+    await truffleAssert.reverts(dexe.withdrawLocked(dexe.address, user1, 100), 'Cannot withdraw this');
+  });
+  it('should allow to withdraw locked USDC', async () => {
+    const TOTAL_SUPPLY = bn(100000000);
+    const DEXE = bn(10).pow(bn(18));
+    const liquidityFundAmount = TOTAL_SUPPLY.mul(DEXE).mul(bn(1)).div(bn(100));
+
+    await dexe.withdrawLocked(tokenUSDCMock.address, user1, 100);
+    assertBNequal(await dexe.balanceOf(dexe.address), TOTAL_SUPPLY.mul(DEXE).sub(liquidityFundAmount));
+  });
+  it('should call specified token when doing withdraw locked', async () => {
+    await tokenUSDCMock.setSuccess(false);
+    await truffleAssert.reverts(dexe.withdrawLocked(tokenUSDCMock.address, user1, 100));
+    await dexe.withdrawLocked(tokenUSDTMock.address, user1, 100);
   });
 });
