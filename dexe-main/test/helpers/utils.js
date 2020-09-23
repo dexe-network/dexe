@@ -254,6 +254,10 @@ const ForceReleaseType = {
   X10: 1,
   X15: 2,
   X20: 3,
+  0: 'X7',
+  1: 'X10',
+  2: 'X15',
+  3: 'X20',
 };
 
 const prepareDistributions = async (dexe, startFrom = 3) => {

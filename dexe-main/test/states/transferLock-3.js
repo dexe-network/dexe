@@ -757,9 +757,7 @@ owner receive all.
     }
   },
   holders: {
-    owner: {
-      stake: { balance: '0 -> 4050000000000000000000000' }
-    },
+    owner: { stake: { balance: '0 -> 4050000000000000000000000' } },
     tokensale: {
       stake: {
         balance: '10000000000000000000000000 -> 5950000000000000000000000'
@@ -789,47 +787,20 @@ owner transfer 10000000 Staking lock to userOne.
 */
 { holders: { owner: { stake: { balance: '4049999999999999990000000' } }, userOne: { stake: { balance: '10000000' } } } },
 /*
-userOne release Staking.
+userOne forceRelease X7.
 {
   holders: {
     userOne: {
-      balanceBeforeLaunch: '0 -> 4931523',
-      balance: '0 -> 4931523',
-      stake: { released: '0 -> 4931523' }
+      balanceBeforeLaunch: '0 -> 860000',
+      balance: '0 -> 860000',
+      stake: { released: '0 -> 1000000' }
     },
     tokensale: {
-      balance: '95000004000000000000000000 -> 95000003999999999995068477'
+      balance: '95000004000000000000000000 -> 95000003999999999999000000'
     }
   }
 }
 */
-{ holders: { userOne: { balanceBeforeLaunch: '4931523', balance: '4931523', stake: { released: '4931523' } }, tokensale: { balance: '95000003999999999995068477' } } },
-/*
-userOne forceRelease undefined.
-{
-  holders: {
-    userOne: {
-      balanceBeforeLaunch: '4931523 -> 5367411',
-      balance: '4931523 -> 5367411',
-      stake: { released: '4931523 -> 5438370' }
-    },
-    tokensale: {
-      balance: '95000003999999999995068477 -> 95000003999999999994561630'
-    }
-  }
-}
-*/
-{ holders: { userOne: { balanceBeforeLaunch: '5367411', balance: '5367411', stake: { released: '5438370' } }, tokensale: { balance: '95000003999999999994561630' } } },
-/*
-userOne transfer 1 Staking lock to userTwo.
-{
-  holders: {
-    userOne: { stake: { balance: '10000000 -> 9999999' } },
-    userTwo: { stake: { balance: '0 -> 1' } }
-  }
-}
-*/
-{ holders: { userOne: { stake: { balance: '9999999' } }, userTwo: { stake: { balance: '1' } } } },
-];
+{ holders: { userOne: { balanceBeforeLaunch: '860000', balance: '860000', stake: { released: '1000000' } }, tokensale: { balance: '95000003999999999999000000' } } }];
 
 module.exports = {expectedState, stateTransitions};

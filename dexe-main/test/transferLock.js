@@ -65,7 +65,7 @@ contract('TransferLock', function(accounts) {
     await ganache.setTime(saleEndTime);
     await doTransferLock(OWNER, LockType.Foundation, userOne, 10000000);
   });
-  it('should be possible to transferLock from user1 to user2 after release', async function() {
+  it('should NOT be possible to transferLock from user1 to user2 after release', async function() {
     const {doTransferLock, doPrepareDistributions, doReceiveAll, doRelease} = await stateChecker('transferLock-2');
 
     await dexe.setDEXEFeed(usdcToDexeMock.address);
@@ -85,11 +85,11 @@ contract('TransferLock', function(accounts) {
     await ganache.setTime(saleEndTime + 180 * DAYS + 50);
     await doRelease(userOne, LockType.Team);
 
-    await ganache.setTime(saleEndTime + 180 * DAYS + 50);
-    await doTransferLock(userOne, LockType.Team, userTwo, 1);
+    await truffleAssert.reverts(dexe.transferLock(LockType.Team, accounts[userTwo], 1, {from: accounts[userOne]}),
+      'Cannot transfer after release');
   });
-  it('should be possible to transferLock Staking from user1 to user2 after release and forceRelease', async function() {
-    const {doTransferLock, doPrepareDistributions, doReceiveAll, doRelease, doForceRelease} =
+  it('should NOT be possible to transferLock Staking from user1 to user2 after forceRelease', async function() {
+    const {doTransferLock, doPrepareDistributions, doReceiveAll, doForceRelease} =
       await stateChecker('transferLock-3');
 
     await dexe.setDEXEFeed(usdcToDexeMock.address);
@@ -107,15 +107,12 @@ contract('TransferLock', function(accounts) {
     await doTransferLock(OWNER, LockType.Staking, userOne, 10000000);
 
     await ganache.setTime(saleEndTime + 180 * DAYS + 50);
-    await doRelease(userOne, LockType.Staking);
-
-    await ganache.setTime(saleEndTime + 180 * DAYS + 50);
     await usdcToDexeMock.setPrice((await dexe.averagePrice()).mul(bn(10)));
     await ganache.setTime(saleEndTime + 180 * DAYS + 50);
     await doForceRelease(userOne, 0);
 
-    await ganache.setTime(saleEndTime + 180 * DAYS + 50);
-    await doTransferLock(userOne, LockType.Staking, userTwo, 1);
+    await truffleAssert.reverts(dexe.transferLock(LockType.Staking, accounts[userTwo], 1, {from: accounts[userOne]}),
+      'Cannot transfer after release');
   });
   it('should be possible to transferLock from user1 to user2 all exept one coin after vesting finished and then release 1 coin', async function() {
     const {doTransferLock, doPrepareDistributions, doReceiveAll, doRelease} = await stateChecker('transferLock-4');
@@ -140,7 +137,7 @@ contract('TransferLock', function(accounts) {
     await ganache.setTime(saleEndTime + 395 * DAYS + 1);
     await doRelease(userOne, LockType.Marketing);
   });
-  it('should not be possible to transferLock from user1 to user2 after release with full balance', async function() {
+  it('should not be possible to transferLock more than locked', async function() {
     await dexe.setDEXEFeed(usdcToDexeMock.address);
     await dexe.setUSDCTokenAddress(tokenUSDCMock.address);
     await usdcToDexeMock.setPrice(DEXE.mul(USDC).mul(bn(10)).add(bn(1)));
@@ -155,11 +152,7 @@ contract('TransferLock', function(accounts) {
     await ganache.setTime(saleEndTime);
     await dexe.transferLock(LockType.Team, user1, 10000000);
 
-    await ganache.setTime(saleEndTime + 180 * DAYS + 50);
-    await dexe.releaseLock(LockType.Team, {from: user1});
-
-    await ganache.setTime(saleEndTime + 180 * DAYS + 50);
-    await truffleAssert.reverts(dexe.transferLock(LockType.Team, user2, 10000000, {from: user1}),
+    await truffleAssert.reverts(dexe.transferLock(LockType.Team, user2, 10000000 + 1, {from: user1}),
       'Insuffisient locked funds');
   });
 });

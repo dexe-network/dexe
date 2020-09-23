@@ -757,9 +757,7 @@ owner receive all.
     }
   },
   holders: {
-    owner: {
-      stake: { balance: '0 -> 4050000000000000000000000' }
-    },
+    owner: { stake: { balance: '0 -> 4050000000000000000000000' } },
     tokensale: {
       stake: {
         balance: '10000000000000000000000000 -> 5950000000000000000000000'
@@ -805,17 +803,6 @@ userOne release Team.
   }
 }
 */
-{ holders: { userOne: { balanceBeforeLaunch: '8', balance: '8', locks: { team: { released: '8' } } }, tokensale: { balance: '95000003999999999999999992' } } },
-/*
-userOne transfer 1 Team lock to userTwo.
-{
-  holders: {
-    userOne: { locks: { team: { balance: '10000000 -> 9999999' } } },
-    userTwo: { locks: { team: { balance: '0 -> 1' } } }
-  }
-}
-*/
-{ holders: { userOne: { locks: { team: { balance: '9999999' } } }, userTwo: { locks: { team: { balance: '1' } } } } },
-];
+{ holders: { userOne: { balanceBeforeLaunch: '8', balance: '8', locks: { team: { released: '8' } } }, tokensale: { balance: '95000003999999999999999992' } } }];
 
 module.exports = {expectedState, stateTransitions};

@@ -503,11 +503,11 @@ contract Dexe is Ownable, ERC20Burnable, IDexe {
     // Assign locked tokens to another holder.
     function transferLock(LockType _lockType, address _to, uint _amount) external note() {
         receiveAll();
-        uint _senderBalance = locks[_lockType][_msgSender()].balance;
-        require(_senderBalance.sub(locks[_lockType][_msgSender()].released) >= _amount,
-            'Insuffisient locked funds');
+        Lock memory _lock = locks[_lockType][_msgSender()];
+        require(_lock.released == 0, 'Cannot transfer after release');
+        require(_lock.balance >= _amount, 'Insuffisient locked funds');
 
-        locks[_lockType][_msgSender()].balance = _senderBalance.sub(_amount).toUInt128();
+        locks[_lockType][_msgSender()].balance = _lock.balance.sub(_amount).toUInt128();
         locks[_lockType][_to].balance = locks[_lockType][_to].balance.add(_amount).toUInt128();
     }
 
