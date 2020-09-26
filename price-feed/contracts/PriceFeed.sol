@@ -20,6 +20,7 @@ contract PriceFeed is IPriceFeed {
     IUniswapV2Pair public immutable pair;
     uint public immutable multiplier;
 
+    uint private priceLast;
     uint public priceCumulativeLast;
     uint32 public blockTimestampLast;
 
@@ -36,34 +37,43 @@ contract PriceFeed is IPriceFeed {
         require(reserve0 != 0 && reserve1 != 0, 'ExampleOracleSimple: NO_RESERVES');
     }
 
-    function update() public override returns(uint, uint32) {
+    function update() public override returns(uint) {
         (, uint _priceCumulative, uint32 _blockTimestamp) =
             UniswapV2OracleLibrary.currentCumulativePrices(address(pair));
+        uint _priceCumulativeLast = priceCumulativeLast;
+        uint _blockTimestampLast = blockTimestampLast;
+        uint _price;
 
-        if (_blockTimestamp != blockTimestampLast) {
+        if (_blockTimestamp != _blockTimestampLast) {
+            _price = FixedPoint.uq112x112(uint224((_priceCumulative - _priceCumulativeLast) /
+                (_blockTimestamp - _blockTimestampLast))).mul(multiplier).decode144();
+            priceLast = _price;
             priceCumulativeLast = _priceCumulative;
             blockTimestampLast = _blockTimestamp;
+        } else {
+            _price = priceLast;
         }
 
-        return(_priceCumulative, _blockTimestamp);
+        return _price;
     }
 
     // note this will always return 0 before update has been called successfully for the first time.
     function consult() external override view returns (uint) {
         (, uint _priceCumulative, uint32 _blockTimestamp) =
             UniswapV2OracleLibrary.currentCumulativePrices(address(pair));
-
-        return FixedPoint.uq112x112(uint224((_priceCumulative - priceCumulativeLast) / 
-            blockTimestampLast - _blockTimestamp)).mul(multiplier).decode144();
-    }
-
-    function updateAndConsult() external override returns (uint) {
         uint _priceCumulativeLast = priceCumulativeLast;
         uint _blockTimestampLast = blockTimestampLast;
-        
-        (uint _priceCumulative, uint32 _blockTimestamp) = update();
+
+        // Most recent price is already calculated.
+        if (_blockTimestamp == _blockTimestampLast) {
+            return priceLast;
+        }
 
         return FixedPoint.uq112x112(uint224((_priceCumulative - _priceCumulativeLast) / 
             (_blockTimestamp - _blockTimestampLast))).mul(multiplier).decode144();
+    }
+
+    function updateAndConsult() external override returns (uint) {
+        return update();
     }
 }

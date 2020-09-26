@@ -57,8 +57,10 @@ contract('PriceFeed', async () => {
       const resultPrice = await priceFeed.updateAndConsult.call();
       await ganache.setTime(1598790732);
       await priceFeed.updateAndConsult();
+      const resultPriceConsult = await priceFeed.consult();
 
       assertBNequal(resultPrice, bn('995461'));
+      assertBNequal(resultPrice, resultPriceConsult);
     });
     it('Should calculate ETH price correctly', async () => {
       await pairMock.setReserves(100, 100);
@@ -85,8 +87,10 @@ contract('PriceFeed', async () => {
       const resultPrice = await priceFeed.updateAndConsult.call();
       await ganache.setTime(1598792386);
       await priceFeed.updateAndConsult();
+      const resultPriceConsult = await priceFeed.consult();
 
       assertBNequal(resultPrice, bn('407435191'));
+      assertBNequal(resultPrice, resultPriceConsult);
     });
     it('Should calculate DX price correctly', async () => {
       await pairMock.setReserves(100, 100);
@@ -113,8 +117,10 @@ contract('PriceFeed', async () => {
       const resultPrice = await priceFeed.updateAndConsult.call();
       await ganache.setTime(1598793612);
       await priceFeed.updateAndConsult();
+      const resultPriceConsult = await priceFeed.consult();
 
       assertBNequal(resultPrice, bn('1012740'));
+      assertBNequal(resultPrice, resultPriceConsult);
     });
     it('Should calculate DX price correctly with different reserves', async () => {
       await pairMock.setReserves(100, 100);
@@ -138,8 +144,10 @@ contract('PriceFeed', async () => {
       const resultPrice = await priceFeed.updateAndConsult.call();
       await ganache.setTime(1598795503);
       await priceFeed.updateAndConsult();
+      const resultPriceConsult = await priceFeed.consult();
 
       assertBNequal(resultPrice, bn('826913297'));
+      assertBNequal(resultPrice, resultPriceConsult);
     });
   });
 });
