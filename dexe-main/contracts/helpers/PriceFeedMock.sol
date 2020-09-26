@@ -6,7 +6,7 @@ import '../../../price-feed/contracts/IPriceFeed.sol';
 contract PriceFeedMock is IPriceFeed {
 
     uint private price = 1;
-    function update() public override returns(uint, uint32) {}
+    function update() public override returns(uint) {}
 
     function consult() external override view returns (uint) {
         return price;
