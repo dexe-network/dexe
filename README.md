@@ -10,14 +10,18 @@ Update Treasury, optional.
 Set USDC address in Dexe.
 Set USDT address in Dexe.
 Deploy PriceFeed for USDT.
-Deploy PriceFeed for ETH.
+Update USDT price feed.
 Set USDT PriceFeed in Dexe.
+Deploy PriceFeed for ETH.
+Update ETH price feed.
 Set ETH PriceFeed in Dexe.
 Add to whitelist in Dexe, optional.
 Wait for 23 hours after sale start.
 Prepare distribution for Round 1 in Dexe.
 Deploy Uniswap USDC/DEXE pair with liquidity.
 Deploy PriceFeed for DEXE.
+Update DEXE price feed.
+Set DEXE PriceFeed in Dexe.
 Wait for 23 hours after Round 1.
 Prepare distribution precisely for Round 2 in Dexe.
 Repeat for all 22 rounds.
