@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.0;
+pragma solidity 0.7.4;
 pragma experimental ABIEncoderV2;
 
 import './Dexe.sol';
+
+interface IUniswapV2Pair {
+    function getReserves() external view returns (uint112, uint112, uint32);
+}
 
 contract DexeUI {
     using ExtraMath for *;
@@ -13,12 +17,9 @@ contract DexeUI {
     uint private constant ROUND_SIZE = ROUND_SIZE_BASE * DEXE;
     uint private constant FIRST_ROUND_SIZE_BASE = 1_000_000;
     uint private constant PERCENT = 10_000;
-    Dexe public immutable dexe;
+    Dexe public constant dexe = Dexe(0xde4EE8057785A7e8e800Db58F9784845A5C2Cbd6);
     uint private constant TOTAL_ROUNDS = 22;
-
-    constructor(Dexe _dexe) {
-        dexe = _dexe;
-    }
+    IUniswapV2Pair private USDCDEXEUNI = IUniswapV2Pair(0x308EcF08955F6ff0a48011561F37A1F570580abe);
 
     function _getRound(uint _round) private view returns (Dexe.Round memory) {
         uint totalDeposited;
@@ -27,7 +28,22 @@ contract DexeUI {
         return Dexe.Round(uint120(totalDeposited), uint128(roundPrice));
     }
 
+    function uniPrice() public view returns (uint) {
+        uint _reserve0;
+        uint _reserve1;
+        (_reserve0, _reserve1, ) = USDCDEXEUNI.getReserves();
+        return _reserve0 * DEXE / _reserve1;
+    }
+
     function predictedRoundResults(uint _round) public view returns(uint, uint) {
+        return _predictedRoundResults(_round, uniPrice());
+    }
+
+    function predictedRoundResultsWithPriceFeed(uint _round) public view returns(uint, uint) {
+        return _predictedRoundResults(_round, dexe.dexePriceFeed().consult());
+    }
+
+    function _predictedRoundResults(uint _round, uint _localRoundPrice) public view returns(uint, uint) {
         Dexe.Round memory _localRound = _getRound(_round);
         if (_localRound.roundPrice > 0) {
             return (_localRound.roundPrice, _localRound.totalDeposited.divCeil(_localRound.roundPrice) * DEXE);
@@ -43,7 +59,6 @@ contract DexeUI {
             return (_localRound.roundPrice, FIRST_ROUND_SIZE_BASE * DEXE);
         }
 
-        uint _localRoundPrice = dexe.dexePriceFeed().consult();
         uint _totalTokensSold = _localRound.totalDeposited.mul(DEXE) / _localRoundPrice;
 
         if (_totalTokensSold < ROUND_SIZE) {
@@ -59,31 +74,32 @@ contract DexeUI {
         return (_localRound.totalDeposited.divCeil(ROUND_SIZE_BASE), ROUND_SIZE);
     }
 
-    function holderClaimableBalance(address _holder) public view returns(uint, uint, uint) {
+    function holderClaimableBalance(address _holder) public view returns(uint, uint, uint, uint, uint, uint) {
         IDexe.HolderRound[22] memory _holderRounds;
         IDexe.UserInfo memory _userInfo;
         (_userInfo, _holderRounds,,,,) = dexe.getFullHolderInfo(_holder);
         Dexe.Round[22] memory _rounds = dexe.getAllRounds();
-        // Holder received everything.
-        if (_holderRounds[TOTAL_ROUNDS - 1].status == IDexe.HolderRoundStatus.Received) {
-            return (0, 0, 0);
-        }
 
         // Holder didn't participate in the sale.
         if (_userInfo.firstRoundDeposited == 0) {
-            return (0, 0, 0);
+            return (0, 0, 0, 0, dexe.getAverageBalance(_holder), _userInfo.balanceBeforeLaunch);
+        }
+
+        // Holder received everything.
+        if (_holderRounds[TOTAL_ROUNDS - 1].status == IDexe.HolderRoundStatus.Received) {
+            return (0, 0, 0, 0, _holderSaleAverage(_userInfo.firstRoundDeposited - 1, _holderRounds), _userInfo.balanceBeforeLaunch);
         }
 
         if (_notPassed(dexe.tokensaleStartDate())) {
-            return (0, 0, 0);
+            return (0, 0, 0, 0, 0, 0);
         }
 
-        uint _currentRound = dexe.currentRound();
+        uint _currentRound = dexe.currentRound() - 1;
 
         uint _totalDexe = 0;
         uint _totalReward = 0;
         uint _percent = 0;
-        for (uint i = (_userInfo.firstRoundDeposited - 1); i < (_currentRound - 1); i++) {
+        for (uint i = (_userInfo.firstRoundDeposited - 1); i < _currentRound; i++) {
             // Skip received rounds.
             if (_holderRounds[i].status == IDexe.HolderRoundStatus.Received) {
                 continue;
@@ -96,10 +112,52 @@ contract DexeUI {
             (_rewards, ) = _receiveRewards(i, _holderRounds, _localRound);
             _totalReward += _rewards;
         }
-        _rounds[_currentRound - 1].roundPrice = dexe.dexePriceFeed().consult().toUInt128();
-        (, _percent) = _receiveRewards(_currentRound - 1, _holderRounds, _rounds[_currentRound - 1]);
+        uint _missingDexeForX2 = 0;
+        if (_currentRound < TOTAL_ROUNDS) {
+            uint _currentRoundEstPrice;
+            (_currentRoundEstPrice, ) = predictedRoundResults(_currentRound + 1);
+            _rounds[_currentRound].roundPrice = _currentRoundEstPrice.toUInt128();
+            _holderRounds[_currentRound].endBalance += ((_holderRounds[_currentRound].deposited * DEXE) / _currentRoundEstPrice).toUInt128();
+            (, _percent) = _receiveRewards(_currentRound, _holderRounds, _rounds[_currentRound]);
 
-        return (_totalDexe, _totalReward, _percent);
+            uint _finalBalance = _holderRounds[_currentRound].endBalance;
+            uint _dexeNeededForX2 = (_holderRounds[_currentRound - 1].endBalance * 101).divCeil(100);
+            if (_finalBalance >= _dexeNeededForX2) {
+                _missingDexeForX2 = 0;
+            } else {
+                _missingDexeForX2 = _dexeNeededForX2 - _finalBalance;
+            }
+        }
+        uint _average = _holderSaleAverage(_userInfo.firstRoundDeposited - 1, _holderRounds);
+        _userInfo.balanceBeforeLaunch = _userInfo.balanceBeforeLaunch.add(_totalDexe).toUInt128();
+
+        return (_totalDexe, _totalReward, _percent, _missingDexeForX2, _average, _userInfo.balanceBeforeLaunch);
+    }
+
+    function holderSaleAverage(address _holder) public view returns(uint) {
+        uint _average;
+        (, , , , _average, ) = holderClaimableBalance(_holder);
+        return _average;
+    }
+
+    function _holderSaleAverage(uint _firstRoundDeposited, Dexe.HolderRound[22] memory _holderRounds) private view returns(uint) {
+        uint _currentRound = dexe.currentRound() - 1;
+        uint _balanceAccumulator = 0;
+        for (uint i = _firstRoundDeposited; i < _currentRound; i++) {
+            _balanceAccumulator += _holderRounds[i].endBalance;
+        }
+        if (_currentRound < TOTAL_ROUNDS) {
+            _balanceAccumulator += _holderRounds[_currentRound].endBalance;
+            _currentRound += 1;
+        }
+        return _balanceAccumulator / (_currentRound - _firstRoundDeposited);
+    }
+
+    function holderSaleAverageAndBeforeLaunch(address _holder) public view returns(uint, uint) {
+        uint _average;
+        uint _balanceBeforeLaunch;
+        (, , , , _average, _balanceBeforeLaunch) = holderClaimableBalance(_holder);
+        return (_average, _balanceBeforeLaunch);
     }
 
     // Receive tokens based on the deposit.
@@ -155,7 +213,11 @@ contract DexeUI {
             _reward = _minPercent.add(_maxBonusPercent).mul(_roundPrice).mul(ROUND_SIZE_BASE)
                 .sub(_maxBonusPercent.mul(_totalDeposited)).mul(_holderBalance).mul(_x2) /
                 100.mul(_roundPrice).mul(ROUND_SIZE_BASE);
-            _percent = _reward * 100 * PERCENT / _holderBalance;
+            if (_holderBalance == 0) {
+                _percent = 0;
+            } else {
+                _percent = _reward * 100 * PERCENT / _holderBalance;
+            }
         }
 
         return (_reward, _percent);
@@ -230,9 +292,9 @@ contract DexeUI {
             _forceReleaseable(Dexe.ForceReleaseType.X20, _holder));
     }
 
-    function holderInfo(address _holder) public view returns(uint[8] memory) {
-        uint[8] memory _info;
-        (_info[0], _info[1], _info[2]) = holderClaimableBalance(_holder);
+    function holderInfo(address _holder) public view returns(uint[11] memory) {
+        uint[11] memory _info;
+        (_info[0], _info[1], _info[2], _info[8], _info[9], _info[10]) = holderClaimableBalance(_holder);
         _info[3] = holderCanRelease(_holder);
         (_info[4], _info[5], _info[6], _info[7]) = forceReleaseable(_holder);
         return _info;
@@ -249,7 +311,7 @@ contract DexeUI {
 
         uint _totalDexe = 0;
         uint _totalReward = 0;
-        (_totalDexe, _totalReward, ) = holderClaimableBalance(_holder);
+        (_totalDexe, _totalReward, , , , ) = holderClaimableBalance(_holder);
         Dexe.Lock memory _lock = _getLock(Dexe.LockType.Staking, _holder);
         if (_lock.balance == 0) {
             return 0;
