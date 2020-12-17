@@ -1,0 +1,21 @@
+{
+  "name": "staking",
+  "version": "1.0.0",
+  "description": "Calculate Dexe unclaimable staking rewards.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index"
+  },
+  "keywords": [
+    "dexe",
+    "etehreum",
+    "erc20"
+  ],
+  "author": "Oleksii Matiiasevych",
+  "license": "ISC",
+  "dependencies": {
+    "bignumber.js": "^9.0.1",
+    "bluebird": "^3.7.2",
+    "web3": "^1.3.0"
+  }
+}
