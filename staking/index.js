@@ -7,7 +7,7 @@ const retry = (fun, delay) => fun().catch(err => Promise.delay(delay).then(() =>
 
 // https://explore.duneanalytics.com/queries/1209/source#2063 execute to get data needed to build a list of all Dexe holders.
 // Current file contains all holders as of 07 December 2020.
-const allDexeHolders = require('./Dexe.Holders.json');
+const allDexeHolders = require('./Dexe.Holders.json').map(address => address.toLowerCase());
 
 const DEXE_UI_ADDRESS = '0xaa6c61bc850e7a4ecb99d0251b9068c0cbb24aea';
 const DEXE_ADDRESS = '0xde4ee8057785a7e8e800db58f9784845a5c2cbd6';

@@ -1,4 +1,4 @@
-# dexe-unclaimable-staking-calculator
+# dexe-unreleasable-staking-calculator
 
 # Installation
 
